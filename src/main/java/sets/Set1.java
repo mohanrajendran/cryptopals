@@ -1,8 +1,11 @@
 package sets;
 
-import java.util.stream.Collector;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import utils.Codec;
 import utils.English;
@@ -16,6 +19,7 @@ public class Set1 {
         PrintChallenge1();
         PrintChallenge2();
         PrintChallenge3();
+        PrintChallenge4();
     }
 
     public static void PrintChallenge1() {
@@ -35,10 +39,27 @@ public class Set1 {
         System.out.println("Challenge 3");
         byte[] cipherText = Codec.fromHex("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736");
 
-        String maxString = IntStream.range(0, 256).boxed()
-                .map(k -> Codec.toAscii(Xor.repeated(cipherText, k.byteValue())))
-                .collect(Collectors.maxBy((a, b) -> English.countLetters(a) - English.countLetters(b))).get();
+        String maxString = Codec.toAscii(maxPlain(cipherText));
 
         System.out.println("Answer:- " + maxString);
+    }
+
+    public static void PrintChallenge4() {
+        System.out.println("Challenge 4");
+
+        try (Stream<String> stream = Files.lines(Paths.get("resources/s1c4.in"))) {
+            byte[] maxBytes = stream.map(s -> maxPlain(Codec.fromHex(s)))
+                    .max((a, b) -> Float.compare(English.englishScore(a), English.englishScore(b))).get();
+
+            System.out.println("Answer:- " + Codec.toAscii(maxBytes));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static byte[] maxPlain(byte[] cipherText) {
+        return IntStream.range(0, 256).boxed().map(k -> Xor.repeated(cipherText, k.byteValue()))
+                .max((a, b) -> Float.compare(English.englishScore(a), English.englishScore(b))).get();
+
     }
 }
