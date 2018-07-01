@@ -17,6 +17,16 @@ public class Codec {
         return result;
     }
 
+    public static String toHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b));
+        }
+
+        return sb.toString();
+    }
+
     public static String toBase64(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
 
