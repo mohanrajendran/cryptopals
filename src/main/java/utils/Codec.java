@@ -1,5 +1,7 @@
 package utils;
 
+import java.nio.charset.StandardCharsets;
+
 public class Codec {
     public static byte[] fromHex(String hex) {
         if (hex.length() % 2 != 0)
@@ -25,6 +27,14 @@ public class Codec {
         }
 
         return sb.toString();
+    }
+
+    public static byte[] fromAscii(String ascii) {
+        return ascii.getBytes();
+    }
+
+    public static String toAscii(byte[] bytes) {
+        return new String(bytes, StandardCharsets.US_ASCII);
     }
 
     public static String toBase64(byte[] bytes) {

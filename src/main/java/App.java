@@ -5,6 +5,6 @@ import sets.Set1;
  */
 public class App {
     public static void main(String[] args) {
-        Set1.PrintAnswer();
+        Set1.PrintAnswers();
     }
 }
