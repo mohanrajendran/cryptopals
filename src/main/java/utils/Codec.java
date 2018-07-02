@@ -37,6 +37,41 @@ public class Codec {
         return new String(bytes, StandardCharsets.US_ASCII);
     }
 
+    public static byte[] fromBase64(String base64) {
+        if (base64.length() % 4 != 0)
+            throw new IllegalArgumentException("Input string must be of a length divisible by 4");
+
+        int resultLength = 3 * base64.length() / 4;
+        if (base64.charAt(base64.length() - 1) == '=')
+            resultLength--;
+        if (base64.charAt(base64.length() - 2) == '=')
+            resultLength--;
+        byte[] result = new byte[resultLength];
+
+        int carry = 0;
+        int rIdx = 0;
+        for (int i = 0; i < base64.length(); i++) {
+            char current = base64.charAt(i);
+            if (current == '=')
+                break;
+
+            int value = base64Chars.indexOf(current);
+            if (i % 4 == 0) {
+                carry = value;
+            } else if (i % 4 == 1) {
+                result[rIdx++] = (byte) ((carry << 2) + (value >> 4));
+                carry = value & ((1 << 4) - 1);
+            } else if (i % 4 == 2) {
+                result[rIdx++] = (byte) ((carry << 4) + (value >> 2));
+                carry = value & ((1 << 2) - 1);
+            } else {
+                result[rIdx++] = (byte) ((carry << 6) + value);
+            }
+        }
+
+        return result;
+    }
+
     public static String toBase64(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
 

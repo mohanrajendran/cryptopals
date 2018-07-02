@@ -20,4 +20,15 @@ public class CodecTest {
         assertEquals("TWE=", result2);
         assertEquals("TQ==", result3);
     }
+
+    @Test
+    public void fromBase64Test() {
+        byte[] result1 = Codec.fromBase64("TWFu");
+        byte[] result2 = Codec.fromBase64("TWE=");
+        byte[] result3 = Codec.fromBase64("TQ==");
+
+        assertArrayEquals(new byte[] { 77, 97, 110 }, result1);
+        assertArrayEquals(new byte[] { 77, 97 }, result2);
+        assertArrayEquals(new byte[] { 77 }, result3);
+    }
 }
