@@ -20,6 +20,7 @@ public class Set1 {
         PrintChallenge2();
         PrintChallenge3();
         PrintChallenge4();
+        PrintChallenge5();
     }
 
     public static void PrintChallenge1() {
@@ -55,6 +56,16 @@ public class Set1 {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void PrintChallenge5() {
+        System.out.println("Challenge 5");
+        byte[] plainText = Codec
+                .fromAscii("Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal");
+        byte[] key = Codec.fromAscii("ICE");
+        byte[] cipherText = Xor.repeated(plainText, key);
+
+        System.out.println("Answer:- " + Codec.toHex(cipherText));
     }
 
     private static byte[] maxPlain(byte[] cipherText) {
