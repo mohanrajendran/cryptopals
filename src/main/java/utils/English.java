@@ -6,7 +6,6 @@ import java.util.stream.IntStream;
 public class English {
     public static float englishScore(byte[] ascii) {
         return (float) IntStream.range(0, ascii.length).mapToDouble(i -> letterScore(ascii[i])).sum();
-        // return (int) ascii.chars().filter(c -> Character.isLetter(c)).count();
     }
 
     private static double letterScore(byte c) {

@@ -1,4 +1,4 @@
-package utils;
+package utils.bytes;
 
 public class Xor {
     public static byte[] sameLength(byte[] fst, byte[] snd) {
