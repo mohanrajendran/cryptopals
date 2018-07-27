@@ -43,7 +43,7 @@ public class Set1 {
         System.out.println("Challenge 3");
         byte[] cipherText = Hex.fromHex("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736");
 
-        String maxString = Ascii.toAscii(maxPlain(cipherText));
+        String maxString = Ascii.toAscii(mostProbablePlaintext(cipherText));
 
         System.out.println("Answer:- " + maxString);
     }
@@ -52,7 +52,7 @@ public class Set1 {
         System.out.println("Challenge 4");
 
         try (Stream<String> stream = Files.lines(Paths.get("resources/s1c4.in"))) {
-            byte[] maxBytes = stream.map(s -> maxPlain(Hex.fromHex(s)))
+            byte[] maxBytes = stream.map(s -> mostProbablePlaintext(Hex.fromHex(s)))
                     .max((a, b) -> Float.compare(English.englishScore(a), English.englishScore(b))).get();
 
             System.out.println("Answer:- " + Ascii.toAscii(maxBytes));
@@ -85,7 +85,7 @@ public class Set1 {
             byte[] plainText = new byte[cipherText.length];
 
             for (int i = 0; i < blockSize; i++) {
-                byte[] plainInterleave = maxPlain(transpose(cipherText, i, blockSize));
+                byte[] plainInterleave = mostProbablePlaintext(transpose(cipherText, i, blockSize));
                 int idx = 0;
                 for (int j = i; j < cipherText.length; j += blockSize) {
                     plainText[j] = plainInterleave[idx++];
@@ -98,7 +98,7 @@ public class Set1 {
         }
     }
 
-    private static byte[] maxPlain(byte[] cipherText) {
+    private static byte[] mostProbablePlaintext(byte[] cipherText) {
         return IntStream.range(0, 256).boxed().map(k -> Xor.repeated(cipherText, k.byteValue()))
                 .max((a, b) -> Float.compare(English.englishScore(a), English.englishScore(b))).get();
     }
