@@ -2,12 +2,14 @@ package utils.ciphers;
 
 import java.util.Arrays;
 
-public class AES {
-    private byte[] key;
-    private byte[] expandedKey;
+public class AES128 {
+    private static final int KEY_BYTES = 16;
 
-    public AES(byte[] key) {
-        if (key.length != 16)
+    private byte[] key;
+    public byte[] expandedKey;
+
+    public AES128(byte[] key) {
+        if (key.length != KEY_BYTES)
             throw new IllegalArgumentException("Key length should be 128-bits");
 
         this.key = key;
@@ -15,9 +17,9 @@ public class AES {
     }
 
     private byte[] expandKey(byte[] key) {
-        byte[] expandedKey = new byte[key.length * 11];
+        byte[] expandedKey = new byte[KEY_BYTES * 11];
 
-        for (int i = 0; i < key.length; i++) {
+        for (int i = 0; i < KEY_BYTES; i++) {
             expandedKey[i] = key[i];
         }
 
@@ -33,7 +35,7 @@ public class AES {
                 word[3] = temp;
 
                 for (int j = 0; j < 4; j++)
-                    word[j] = sBox[word[j]];
+                    word[j] = sBox[0xFF & word[j]];
 
                 word[0] ^= rCon[i / 4];
             }
@@ -91,7 +93,7 @@ public class AES {
 
     private void subBytes(byte[] state) {
         for (int i = 0; i < state.length; i++) {
-            state[i] = sBox[state[i]];
+            state[i] = sBox[0xFF & state[i]];
         }
     }
 
