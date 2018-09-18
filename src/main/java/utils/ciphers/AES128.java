@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 public class AES128 {
     private static final int KEY_BYTES = 16;
+    private static final int NUM_ROUNDS = 10;
 
     private byte[] key;
     public byte[] expandedKey;
@@ -13,11 +14,11 @@ public class AES128 {
             throw new IllegalArgumentException("Key length should be 128-bits");
 
         this.key = key;
-        this.expandedKey = expandKey(key);
+        this.expandedKey = expandKey();
     }
 
-    private byte[] expandKey(byte[] key) {
-        byte[] expandedKey = new byte[KEY_BYTES * 11];
+    private byte[] expandKey() {
+        byte[] expandedKey = new byte[KEY_BYTES * (NUM_ROUNDS + 1)];
 
         for (int i = 0; i < KEY_BYTES; i++) {
             expandedKey[i] = key[i];
@@ -57,10 +58,10 @@ public class AES128 {
     public byte[] encrypt(byte[] plainText) {
         byte[] cipherText = new byte[plainText.length];
 
-        for (int i = 0; i < plainText.length; i += key.length) {
-            byte[] block = Arrays.copyOfRange(plainText, i, i + key.length);
-            byte[] cipher = this.encryptBlock(block);
-            System.arraycopy(cipher, 0, block, i, key.length);
+        for (int i = 0; i < plainText.length; i += KEY_BYTES) {
+            byte[] block = Arrays.copyOfRange(plainText, i, i + KEY_BYTES);
+            byte[] cipherBlock = this.encryptBlock(block);
+            System.arraycopy(cipherBlock, 0, cipherText, i, KEY_BYTES);
         }
 
         return cipherText;
@@ -70,8 +71,7 @@ public class AES128 {
         byte[] state = block;
 
         this.addRoundKey(state, 0);
-
-        for (int round = 1; round <= 9; round++) {
+        for (int round = 1; round < NUM_ROUNDS; round++) {
             this.subBytes(state);
             this.shiftRows(state);
             this.mixColumns(state);
@@ -80,7 +80,7 @@ public class AES128 {
 
         this.subBytes(state);
         this.shiftRows(state);
-        this.addRoundKey(state, 10 * block.length);
+        this.addRoundKey(state, NUM_ROUNDS * block.length);
 
         return state;
     }
@@ -124,17 +124,36 @@ public class AES128 {
 
     private void mixColumns(byte[] state) {
         for (int i = 0; i < 16; i += 4) {
-            byte temp = (byte) (state[i] ^ state[i + 1] ^ state[i + 2] ^ state[i + 3]);
+            byte[] a = new byte[4];
+            byte[] b = new byte[4];
+            byte[] c = new byte[4];
 
-            state[i] = (byte) (xtime((byte) (state[i] ^ state[i + 1])) ^ state[i + 1] ^ temp);
-            state[i + 1] = (byte) (xtime((byte) (state[i + 1] ^ state[i + 2])) ^ state[i + 2] ^ temp);
-            state[i + 2] = (byte) (xtime((byte) (state[i + 2] ^ state[i + 3])) ^ state[i + 3] ^ temp);
-            state[i + 3] = (byte) (xtime((byte) (state[i + 3] ^ state[i])) ^ state[i] ^ temp);
+            for (int j = 0; j < 4; j++) {
+                a[j] = state[i + j];
+                b[j] = xtime(a[j]);
+                c[j] = (byte) (a[j] ^ b[j]);
+            }
+
+            state[i] = (byte) (b[0] ^ c[1] ^ a[2] ^ a[3]);
+            state[i + 1] = (byte) (a[0] ^ b[1] ^ c[2] ^ a[3]);
+            state[i + 2] = (byte) (a[0] ^ a[1] ^ b[2] ^ c[3]);
+            state[i + 3] = (byte) (c[0] ^ a[1] ^ a[2] ^ b[3]);
+            /*
+             * state[i] = (byte) ((xtime(state[i + 1])) ^ state[i] ^ temp); state[i + 1] =
+             * (byte) ((xtime(state[i + 2])) ^ state[i + 1] ^ temp); state[i + 2] = (byte)
+             * ((xtime(state[i + 3])) ^ state[i + 2] ^ temp); state[i + 3] = (byte)
+             * ((xtime(state[i])) ^ state[i + 3] ^ temp);
+             */
+            /*
+             * state[i] = (byte) ((xtime(state[i])) ^ (xtime(state[i + 1]) ^ state[i + 1] ^
+             * state[i + 2] ^ state[i + 3])); state[i + 1] = (byte) (state[i] ^
+             * xtime(state[i + 1]) ^ xtime(state[i + 2]) ^ state[i + 2] ^ state[i + 3]);
+             */
         }
     }
 
     private byte xtime(byte val) {
-        return (byte) ((val << 1) ^ ((val >> 7) * 0x1b));
+        return (byte) ((val << 1) ^ (((val & 0xff) >>> 7) * 0x1b));
     }
 
     private static byte[] rCon = { (byte) 0x8d, (byte) 0x01, (byte) 0x02, (byte) 0x04, (byte) 0x08, (byte) 0x10,

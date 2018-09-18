@@ -14,6 +14,7 @@ public class AES128Test {
         byte[] cipherText = Hex.fromHex("3925841d02dc09fbdc118597196a0b32");
 
         AES128 aes = new AES128(key);
-        assertArrayEquals(cipherText, aes.encrypt(plainText));
+        byte[] encrypted = aes.encrypt(plainText);
+        assertArrayEquals(cipherText, encrypted);
     }
 }
