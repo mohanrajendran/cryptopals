@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 
 import utils.codec.*;
 import utils.bytes.*;
+import utils.ciphers.AES128;
 import utils.English;
 
 public class Set1 {
@@ -24,6 +25,7 @@ public class Set1 {
         PrintChallenge4();
         PrintChallenge5();
         PrintChallenge6();
+        PrintChallenge7();
     }
 
     public static void PrintChallenge1() {
@@ -80,8 +82,6 @@ public class Set1 {
             int blockSize = IntStream.range(2, 41).boxed().min((a, b) -> Float
                     .compare(normalizedEditDistance(cipherText, a), normalizedEditDistance(cipherText, b))).get();
 
-            // System.out.println(blockSize);
-
             byte[] plainText = new byte[cipherText.length];
 
             for (int i = 0; i < blockSize; i++) {
@@ -91,6 +91,21 @@ public class Set1 {
                     plainText[j] = plainInterleave[idx++];
                 }
             }
+
+            System.out.println("Answer:- " + Ascii.toAscii(plainText));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void PrintChallenge7() {
+        System.out.println("Challenge 7");
+
+        try (Stream<String> stream = Files.lines(Paths.get("resources/s1c7.in"))) {
+            byte[] cipherText = Base64.fromBase64(stream.collect(Collectors.joining()));
+            byte[] key = Ascii.fromAscii("YELLOW SUBMARINE");
+            AES128 aes = new AES128(key);
+            byte[] plainText = aes.decrypt(cipherText);
 
             System.out.println("Answer:- " + Ascii.toAscii(plainText));
         } catch (IOException e) {
