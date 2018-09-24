@@ -2,22 +2,22 @@ package utils.ciphers;
 
 import java.util.Arrays;
 
+import utils.codec.Hex;
+
 public class AES128 {
     private static final int KEY_BYTES = 16;
     private static final int NUM_ROUNDS = 10;
 
-    private byte[] key;
-    public byte[] expandedKey;
+    private byte[] expandedKey;
 
     public AES128(byte[] key) {
         if (key.length != KEY_BYTES)
             throw new IllegalArgumentException("Key length should be 128-bits");
 
-        this.key = key;
-        this.expandedKey = expandKey();
+        expandedKey = expandKey(key);
     }
 
-    private byte[] expandKey() {
+    private byte[] expandKey(byte[] key) {
         byte[] expandedKey = new byte[KEY_BYTES * (NUM_ROUNDS + 1)];
 
         for (int i = 0; i < KEY_BYTES; i++) {
@@ -52,7 +52,74 @@ public class AES128 {
     public byte[] decrypt(byte[] cipherText) {
         byte[] plainText = new byte[cipherText.length];
 
+        for (int i = 0; i < cipherText.length; i += KEY_BYTES) {
+            byte[] block = Arrays.copyOfRange(cipherText, i, i + KEY_BYTES);
+            byte[] plainBlock = decryptBlock(block);
+            System.arraycopy(plainBlock, 0, plainText, i, KEY_BYTES);
+        }
+
         return plainText;
+    }
+
+    private byte[] decryptBlock(byte[] block) {
+        byte[] state = block;
+
+        addRoundKey(state, NUM_ROUNDS * block.length);
+
+        for (int round = NUM_ROUNDS - 1; round >= 1; round--) {
+            invShiftRows(state);
+            invSubBytes(state);
+            addRoundKey(state, round * block.length);
+            invMixColumns(state);
+        }
+
+        invShiftRows(state);
+        invSubBytes(state);
+        addRoundKey(state, 0);
+
+        return state;
+    }
+
+    private void invSubBytes(byte[] state) {
+        for (int i = 0; i < state.length; i++) {
+            state[i] = sBoxInv[0xFF & state[i]];
+        }
+    }
+
+    private void invShiftRows(byte[] state) {
+        byte temp;
+        // shift row 1
+        temp = state[1];
+        state[1] = state[13];
+        state[13] = state[9];
+        state[9] = state[5];
+        state[5] = temp;
+
+        // shift row 2
+        temp = state[2];
+        state[2] = state[10];
+        state[10] = temp;
+        temp = state[6];
+        state[6] = state[14];
+        state[14] = temp;
+
+        // shift row 3
+        temp = state[7];
+        state[7] = state[11];
+        state[11] = state[15];
+        state[15] = state[3];
+        state[3] = temp;
+    }
+
+    private void invMixColumns(byte[] state) {
+        for (int i = 0; i < 16; i += 4) {
+            byte[] t = { state[i], state[i + 1], state[i + 2], state[i + 3] };
+
+            state[i] = (byte) (gmul(t[0], 0x0e) ^ gmul(t[1], 0x0b) ^ gmul(t[2], 0x0d) ^ gmul(t[3], 0x09));
+            state[i + 1] = (byte) (gmul(t[0], 0x09) ^ gmul(t[1], 0x0e) ^ gmul(t[2], 0x0b) ^ gmul(t[3], 0x0d));
+            state[i + 2] = (byte) (gmul(t[0], 0x0d) ^ gmul(t[1], 0x09) ^ gmul(t[2], 0x0e) ^ gmul(t[3], 0x0b));
+            state[i + 3] = (byte) (gmul(t[0], 0x0b) ^ gmul(t[1], 0x0d) ^ gmul(t[2], 0x09) ^ gmul(t[3], 0x0e));
+        }
     }
 
     public byte[] encrypt(byte[] plainText) {
@@ -60,7 +127,7 @@ public class AES128 {
 
         for (int i = 0; i < plainText.length; i += KEY_BYTES) {
             byte[] block = Arrays.copyOfRange(plainText, i, i + KEY_BYTES);
-            byte[] cipherBlock = this.encryptBlock(block);
+            byte[] cipherBlock = encryptBlock(block);
             System.arraycopy(cipherBlock, 0, cipherText, i, KEY_BYTES);
         }
 
@@ -70,24 +137,24 @@ public class AES128 {
     private byte[] encryptBlock(byte[] block) {
         byte[] state = block;
 
-        this.addRoundKey(state, 0);
+        addRoundKey(state, 0);
         for (int round = 1; round < NUM_ROUNDS; round++) {
-            this.subBytes(state);
-            this.shiftRows(state);
-            this.mixColumns(state);
-            this.addRoundKey(state, round * block.length);
+            subBytes(state);
+            shiftRows(state);
+            mixColumns(state);
+            addRoundKey(state, round * block.length);
         }
 
-        this.subBytes(state);
-        this.shiftRows(state);
-        this.addRoundKey(state, NUM_ROUNDS * block.length);
+        subBytes(state);
+        shiftRows(state);
+        addRoundKey(state, NUM_ROUNDS * block.length);
 
         return state;
     }
 
     private void addRoundKey(byte[] state, int offset) {
         for (int i = 0; i < state.length; i++) {
-            state[i] ^= this.expandedKey[offset + i];
+            state[i] ^= expandedKey[offset + i];
         }
     }
 
@@ -124,32 +191,25 @@ public class AES128 {
 
     private void mixColumns(byte[] state) {
         for (int i = 0; i < 16; i += 4) {
-            byte[] a = new byte[4];
-            byte[] b = new byte[4];
-            byte[] c = new byte[4];
+            byte[] t = { state[i], state[i + 1], state[i + 2], state[i + 3] };
 
-            for (int j = 0; j < 4; j++) {
-                a[j] = state[i + j];
-                b[j] = xtime(a[j]);
-                c[j] = (byte) (a[j] ^ b[j]);
-            }
-
-            state[i] = (byte) (b[0] ^ c[1] ^ a[2] ^ a[3]);
-            state[i + 1] = (byte) (a[0] ^ b[1] ^ c[2] ^ a[3]);
-            state[i + 2] = (byte) (a[0] ^ a[1] ^ b[2] ^ c[3]);
-            state[i + 3] = (byte) (c[0] ^ a[1] ^ a[2] ^ b[3]);
-            /*
-             * state[i] = (byte) ((xtime(state[i + 1])) ^ state[i] ^ temp); state[i + 1] =
-             * (byte) ((xtime(state[i + 2])) ^ state[i + 1] ^ temp); state[i + 2] = (byte)
-             * ((xtime(state[i + 3])) ^ state[i + 2] ^ temp); state[i + 3] = (byte)
-             * ((xtime(state[i])) ^ state[i + 3] ^ temp);
-             */
-            /*
-             * state[i] = (byte) ((xtime(state[i])) ^ (xtime(state[i + 1]) ^ state[i + 1] ^
-             * state[i + 2] ^ state[i + 3])); state[i + 1] = (byte) (state[i] ^
-             * xtime(state[i + 1]) ^ xtime(state[i + 2]) ^ state[i + 2] ^ state[i + 3]);
-             */
+            state[i] = (byte) (gmul(t[0], 0x02) ^ gmul(t[1], 0x03) ^ t[2] ^ t[3]);
+            state[i + 1] = (byte) (t[0] ^ gmul(t[1], 0x02) ^ gmul(t[2], 0x03) ^ t[3]);
+            state[i + 2] = (byte) (t[0] ^ t[1] ^ gmul(t[2], 0x02) ^ gmul(t[3], 0x03));
+            state[i + 3] = (byte) (gmul(t[0], 0x03) ^ t[1] ^ t[2] ^ gmul(t[3], 0x02));
         }
+    }
+
+    private byte gmul(byte a, int b) {
+        byte p = 0;
+        while (a != 0 && b != 0) {
+            if ((b & 0x01) == 0x01) {
+                p ^= a;
+            }
+            b = (byte) ((b & 0xff) >>> 1);
+            a = xtime(a);
+        }
+        return p;
     }
 
     private byte xtime(byte val) {
@@ -189,7 +249,7 @@ public class AES128 {
             (byte) 0xd3, (byte) 0xbd, (byte) 0x61, (byte) 0xc2, (byte) 0x9f, (byte) 0x25, (byte) 0x4a, (byte) 0x94,
             (byte) 0x33, (byte) 0x66, (byte) 0xcc, (byte) 0x83, (byte) 0x1d, (byte) 0x3a, (byte) 0x74, (byte) 0xe8,
             (byte) 0xcb, (byte) 0x8d };
-    private static byte[] sBox = { (byte) 0x63, (byte) 0x7C, (byte) 0x77, (byte) 0x7B, (byte) 0xF2, (byte) 0x6B,
+    public static byte[] sBox = { (byte) 0x63, (byte) 0x7C, (byte) 0x77, (byte) 0x7B, (byte) 0xF2, (byte) 0x6B,
             (byte) 0x6F, (byte) 0xC5, (byte) 0x30, (byte) 0x01, (byte) 0x67, (byte) 0x2B, (byte) 0xFE, (byte) 0xD7,
             (byte) 0xAB, (byte) 0x76, (byte) 0xCA, (byte) 0x82, (byte) 0xC9, (byte) 0x7D, (byte) 0xFA, (byte) 0x59,
             (byte) 0x47, (byte) 0xF0, (byte) 0xAD, (byte) 0xD4, (byte) 0xA2, (byte) 0xAF, (byte) 0x9C, (byte) 0xA4,
@@ -223,7 +283,7 @@ public class AES128 {
             (byte) 0x42, (byte) 0x68, (byte) 0x41, (byte) 0x99, (byte) 0x2D, (byte) 0x0F, (byte) 0xB0, (byte) 0x54,
             (byte) 0xBB, (byte) 0x16 };
 
-    private static byte[] sBoxInv = { (byte) 0x52, (byte) 0x09, (byte) 0x6A, (byte) 0xD5, (byte) 0x30, (byte) 0x36,
+    public static byte[] sBoxInv = { (byte) 0x52, (byte) 0x09, (byte) 0x6A, (byte) 0xD5, (byte) 0x30, (byte) 0x36,
             (byte) 0xA5, (byte) 0x38, (byte) 0xBF, (byte) 0x40, (byte) 0xA3, (byte) 0x9E, (byte) 0x81, (byte) 0xF3,
             (byte) 0xD7, (byte) 0xFB, (byte) 0x7C, (byte) 0xE3, (byte) 0x39, (byte) 0x82, (byte) 0x9B, (byte) 0x2F,
             (byte) 0xFF, (byte) 0x87, (byte) 0x34, (byte) 0x8E, (byte) 0x43, (byte) 0x44, (byte) 0xC4, (byte) 0xDE,
