@@ -9,6 +9,7 @@ import utils.codec.Base64
 import utils.codec.Hex
 import java.io.File
 
+@ExperimentalUnsignedTypes
 object Pset1 {
     fun PrintAnswers() {
         println("Set 1 Answers")
@@ -20,6 +21,7 @@ object Pset1 {
         PrintChallenge5()
         PrintChallenge6()
         PrintChallenge7()
+        PrintChallenge8()
     }
 
     private fun PrintChallenge1() {
@@ -100,6 +102,15 @@ object Pset1 {
         }
     }
 
+    private fun PrintChallenge8() {
+        println("challenge 8")
+        File("resources/s1c8.in").useLines { lines ->
+            val maxRepeated = lines
+                .maxByOrNull { repeatedBlocks(Hex.fromHex(it)) }
+            println("Answer:- ${maxRepeated!!}")
+        }
+    }
+
     private fun mostProbablePlaintext(cipherText: UByteArray): UByteArray {
         return (0..256)
             .map { Xor.repeated(cipherText, it.toUByte()) }
@@ -118,5 +129,17 @@ object Pset1 {
 
     private fun transpose(cipherText: UByteArray, offset: Int, period: Int): UByteArray {
         return cipherText.filterIndexed { index, _ -> index % period == offset }.toUByteArray()
+    }
+
+    private fun repeatedBlocks(cipherText: UByteArray): Int {
+        val counts = mutableMapOf<String, Int>()
+
+        cipherText.chunked(16)
+            .forEach { chunk ->
+                val key = Hex.toHex(chunk.toUByteArray())
+                counts[key] = counts.getOrDefault(key, 0) + 1
+            }
+
+        return counts.values.filter { it > 1 }.sum()
     }
 }
