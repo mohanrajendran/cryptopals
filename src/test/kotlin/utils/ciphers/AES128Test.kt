@@ -8,7 +8,7 @@ import io.kotest.matchers.shouldBe
 import utils.codec.fromHex
 
 class AES128Test : FunSpec({
-    val aes: AES128 = AES128("2b7e151628aed2a6abf7158809cf4f3c".fromHex())
+    val aes = AES128("2b7e151628aed2a6abf7158809cf4f3c".fromHex())
     val testCases = listOf(
         Pair("3243f6a8885a308d313198a2e0370734", "3925841d02dc09fbdc118597196a0b32"),
         Pair(
