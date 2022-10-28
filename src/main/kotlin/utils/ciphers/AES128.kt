@@ -1,6 +1,9 @@
+@file:OptIn(ExperimentalUnsignedTypes::class)
+
 package utils.ciphers
 
-@ExperimentalUnsignedTypes
+// Adapted from the NIST documenation here:
+// https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197.pdf
 class AES128 constructor(key: UByteArray) {
     private val expandedKey: UByteArray
 
@@ -71,6 +74,32 @@ class AES128 constructor(key: UByteArray) {
         expandedKey = expandKey(key)
     }
 
+    fun encrypt(plainText: UByteArray): UByteArray {
+        require(plainText.size % KEY_BYTES == 0) { "Plaintext should be a size multiple of 128-bits" }
+        val cipherText = UByteArray(plainText.size)
+        var i = 0
+        while (i < plainText.size) {
+            val block = plainText.copyOfRange(i, i + KEY_BYTES)
+            val cipherBlock = encryptBlock(block)
+            cipherBlock.copyInto(cipherText, i, 0, KEY_BYTES)
+            i += KEY_BYTES
+        }
+        return cipherText
+    }
+
+    fun decrypt(cipherText: UByteArray): UByteArray {
+        require(cipherText.size % KEY_BYTES == 0) { "Ciphertext should be a size multiple of 128-bits" }
+        val plainText = UByteArray(cipherText.size)
+        var i = 0
+        while (i < cipherText.size) {
+            val block = cipherText.copyOfRange(i, i + KEY_BYTES)
+            val plainBlock = decryptBlock(block)
+            plainBlock.copyInto(plainText, i, 0, KEY_BYTES)
+            i += KEY_BYTES
+        }
+        return plainText
+    }
+
     private fun expandKey(key: UByteArray): UByteArray {
         val expandedKey = UByteArray(KEY_BYTES * (NUM_ROUNDS + 1))
         (0 until KEY_BYTES).forEach { i ->
@@ -95,18 +124,6 @@ class AES128 constructor(key: UByteArray) {
             }
         }
         return expandedKey
-    }
-
-    fun decrypt(cipherText: UByteArray): UByteArray {
-        val plainText = UByteArray(cipherText.size)
-        var i = 0
-        while (i < cipherText.size) {
-            val block = cipherText.copyOfRange(i, i + KEY_BYTES)
-            val plainBlock = decryptBlock(block)
-            plainBlock.copyInto(plainText, i, 0, KEY_BYTES)
-            i += KEY_BYTES
-        }
-        return plainText
     }
 
     private fun decryptBlock(block: UByteArray): UByteArray {
@@ -163,18 +180,6 @@ class AES128 constructor(key: UByteArray) {
             state[i + 3] = (gmul(t[0], 0x0b) xor gmul(t[1], 0x0d) xor gmul(t[2], 0x09) xor gmul(t[3], 0x0e))
             i += 4
         }
-    }
-
-    fun encrypt(plainText: UByteArray): UByteArray {
-        val cipherText = UByteArray(plainText.size)
-        var i = 0
-        while (i < plainText.size) {
-            val block = plainText.copyOfRange(i, i + KEY_BYTES)
-            val cipherBlock = encryptBlock(block)
-            cipherBlock.copyInto(cipherText, i, 0, KEY_BYTES)
-            i += KEY_BYTES
-        }
-        return cipherText
     }
 
     private fun encryptBlock(block: UByteArray): UByteArray {

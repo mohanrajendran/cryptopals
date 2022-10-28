@@ -1,14 +1,14 @@
+@file:OptIn(ExperimentalUnsignedTypes::class)
+
 package utils.codec
 
 import java.nio.charset.StandardCharsets
 
-@ExperimentalUnsignedTypes
-object Ascii {
-    fun fromAscii(ascii: String): UByteArray {
-        return ascii.toByteArray().toUByteArray()
-    }
+fun String.fromAscii(): UByteArray {
+    val ascii = this
+    return ascii.toByteArray().toUByteArray()
+}
 
-    fun toAscii(bytes: UByteArray): String {
-        return String(bytes.toByteArray(), StandardCharsets.US_ASCII)
-    }
+fun UByteArray.toAscii(): String {
+    return String(this.toByteArray(), StandardCharsets.US_ASCII)
 }
