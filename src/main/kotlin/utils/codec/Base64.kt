@@ -4,11 +4,14 @@ package utils.codec
 
 private const val base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
-fun String.fromBase64(): UByteArray {
-    val base64 = this
+@JvmInline
+value class Base64(val string: String)
+
+fun Base64.toBytes(): UByteArray {
+    val base64 = this.string
     require(base64.length % 4 == 0) { "Input string must be of a length divisible by 4, got length ${base64.length}" }
 
-    if(base64.length == 0)
+    if (base64.length == 0)
         return ubyteArrayOf()
 
     var resultLength = 3 * base64.length / 4
@@ -41,7 +44,7 @@ fun String.fromBase64(): UByteArray {
     return result
 }
 
-fun UByteArray.toBase64(): String {
+fun UByteArray.toBase64(): Base64 {
     val bytes = this
     val sb = StringBuilder()
     var carry = 0
@@ -75,5 +78,5 @@ fun UByteArray.toBase64(): String {
         sb.append(base64Chars[idx])
         sb.append('=')
     }
-    return sb.toString()
+    return Base64(sb.toString())
 }

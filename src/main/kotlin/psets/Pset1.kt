@@ -23,22 +23,22 @@ object Pset1 {
     private fun PrintChallenge1() {
         println("Challenge 1")
         val answer =
-            "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"
-                .fromHex().toBase64()
+            Hex("49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d")
+                .toBytes().toBase64()
         println("Answer:- $answer")
     }
 
     private fun PrintChallenge2() {
         println("Challenge 2")
-        val hex1 = "1c0111001f010100061a024b53535009181c".fromHex()
-        val hex2 = "686974207468652062756c6c277320657965".fromHex()
+        val hex1 = Hex("1c0111001f010100061a024b53535009181c").toBytes()
+        val hex2 = Hex("686974207468652062756c6c277320657965").toBytes()
         val answer = (hex1 xor hex2).toHex()
         println("Answer:- $answer")
     }
 
     private fun PrintChallenge3() {
         println("Challenge 3")
-        val cipherText = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736".fromHex()
+        val cipherText = Hex("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736").toBytes()
         val maxString = mostProbablePlaintext(cipherText).toAscii()
         println("Answer:- $maxString")
     }
@@ -46,7 +46,7 @@ object Pset1 {
     private fun PrintChallenge4() {
         println("Challenge 4")
         File("resources/s1c4.in").useLines { lines ->
-            val maxBytes = lines.map { mostProbablePlaintext(it.fromHex()) }
+            val maxBytes = lines.map { mostProbablePlaintext(Hex(it).toBytes()) }
                 .maxByOrNull { it.englishScore() }!!
 
             println("Answer:- ${maxBytes.toAscii()}")
@@ -56,11 +56,13 @@ object Pset1 {
     private fun PrintChallenge5() {
         println("Challenge 5")
         val plainText =
-            """
+            Ascii(
+                """
             Burning 'em, if you ain't quick and nimble
             I go crazy when I hear a cymbal
-            """.trimIndent().fromAscii()
-        val key = "ICE".fromAscii()
+            """.trimIndent()
+            ).toBytes()
+        val key = Ascii("ICE").toBytes()
         val cipherText = plainText xorRepeat key
         println("Answer:- ${cipherText.toHex()}")
     }
@@ -68,7 +70,7 @@ object Pset1 {
     private fun PrintChallenge6() {
         println("Challenge 6")
         File("resources/s1c6.in").useLines { lines ->
-            val cipherText = lines.joinToString(separator = "").fromBase64()
+            val cipherText = Base64(lines.joinToString(separator = "")).toBytes()
             val blockSize = (2..41).minByOrNull { normalizedEditDistance(cipherText, it) }!!
 
             val plainText = UByteArray(cipherText.size)
@@ -87,8 +89,8 @@ object Pset1 {
     private fun PrintChallenge7() {
         println("Challenge 7")
         File("resources/s1c7.in").useLines { lines ->
-            val cipherText = (lines.joinToString(separator = "")).fromBase64()
-            val key = "YELLOW SUBMARINE".fromAscii()
+            val cipherText = Base64(lines.joinToString(separator = "")).toBytes()
+            val key = Ascii("YELLOW SUBMARINE").toBytes()
             val aes = AES128(key)
             val plainText = aes.decrypt(cipherText)
             println("Answer:- ${plainText.toAscii()}")
@@ -99,7 +101,7 @@ object Pset1 {
         println("challenge 8")
         File("resources/s1c8.in").useLines { lines ->
             val maxRepeated = lines
-                .maxByOrNull { repeatedBlocks(it.fromHex()) }
+                .maxByOrNull { repeatedBlocks(Hex(it).toBytes()) }
             println("Answer:- ${maxRepeated!!}")
         }
     }
@@ -129,7 +131,7 @@ object Pset1 {
 
         cipherText.chunked(16)
             .forEach { chunk ->
-                val key = chunk.toUByteArray().toHex()
+                val key = chunk.toUByteArray().toHex().string
                 counts[key] = counts.getOrDefault(key, 0) + 1
             }
 

@@ -4,11 +4,14 @@ package utils.codec
 
 import java.nio.charset.StandardCharsets
 
-fun String.fromAscii(): UByteArray {
+@JvmInline
+value class Ascii(val string: String)
+
+fun Ascii.toBytes(): UByteArray {
     val ascii = this
-    return ascii.toByteArray().toUByteArray()
+    return ascii.string.toByteArray().toUByteArray()
 }
 
-fun UByteArray.toAscii(): String {
-    return String(this.toByteArray(), StandardCharsets.US_ASCII)
+fun UByteArray.toAscii(): Ascii {
+    return Ascii(String(this.toByteArray(), StandardCharsets.US_ASCII))
 }

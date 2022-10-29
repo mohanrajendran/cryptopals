@@ -2,6 +2,14 @@
 
 package utils.ciphers
 
+import utils.byteops.xor
+
+// Reference: https://www.wikiwand.com/en/Block_cipher_mode_of_operation
+enum class BlockMode {
+    ECB, // Electronic CodeBook
+    CBC  // Cipher block chaining
+}
+
 // Adapted from the NIST documenation here:
 // https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197.pdf
 class AES128 constructor(key: UByteArray) {
@@ -74,28 +82,44 @@ class AES128 constructor(key: UByteArray) {
         expandedKey = expandKey(key)
     }
 
-    fun encrypt(plainText: UByteArray): UByteArray {
+    fun encrypt(plainText: UByteArray, mode: BlockMode = BlockMode.ECB, iv: UByteArray = ubyteArrayOf()): UByteArray {
         require(plainText.size % KEY_BYTES == 0) { "Plaintext should be a size multiple of 128-bits" }
+        if (mode == BlockMode.CBC) {
+            require(iv.size == KEY_BYTES) { "Initialization vector should be 128-bits in CBC mode" }
+        }
         val cipherText = UByteArray(plainText.size)
         var i = 0
+        var prev = iv
         while (i < plainText.size) {
-            val block = plainText.copyOfRange(i, i + KEY_BYTES)
-            val cipherBlock = encryptBlock(block)
+            val plainBlock = plainText.copyOfRange(i, i + KEY_BYTES)
+            val cipherBlock = when (mode) {
+                BlockMode.ECB -> encryptBlock(plainBlock)
+                BlockMode.CBC -> encryptBlock(plainBlock xor prev)
+            }
             cipherBlock.copyInto(cipherText, i, 0, KEY_BYTES)
             i += KEY_BYTES
+            prev = cipherBlock
         }
         return cipherText
     }
 
-    fun decrypt(cipherText: UByteArray): UByteArray {
+    fun decrypt(cipherText: UByteArray, mode: BlockMode = BlockMode.ECB, iv: UByteArray = ubyteArrayOf()): UByteArray {
         require(cipherText.size % KEY_BYTES == 0) { "Ciphertext should be a size multiple of 128-bits" }
+        if (mode == BlockMode.CBC) {
+            require(iv.size == KEY_BYTES) { "Initialization vector should be 128-bits in CBC mode" }
+        }
         val plainText = UByteArray(cipherText.size)
         var i = 0
+        var prev = iv
         while (i < cipherText.size) {
-            val block = cipherText.copyOfRange(i, i + KEY_BYTES)
-            val plainBlock = decryptBlock(block)
+            val cipherBlock = cipherText.copyOfRange(i, i + KEY_BYTES)
+            val plainBlock = when(mode) {
+                BlockMode.ECB -> decryptBlock(cipherBlock)
+                BlockMode.CBC -> decryptBlock(cipherBlock) xor prev
+            }
             plainBlock.copyInto(plainText, i, 0, KEY_BYTES)
             i += KEY_BYTES
+            prev = cipherBlock
         }
         return plainText
     }
@@ -126,7 +150,8 @@ class AES128 constructor(key: UByteArray) {
         return expandedKey
     }
 
-    private fun decryptBlock(block: UByteArray): UByteArray {
+    private fun decryptBlock(cipherBlock: UByteArray): UByteArray {
+        val block = cipherBlock.copyOf()
         addRoundKey(block, NUM_ROUNDS * block.size)
         for (round in NUM_ROUNDS - 1 downTo 1) {
             invShiftRows(block)
@@ -182,7 +207,8 @@ class AES128 constructor(key: UByteArray) {
         }
     }
 
-    private fun encryptBlock(block: UByteArray): UByteArray {
+    private fun encryptBlock(plainBlock: UByteArray): UByteArray {
+        val block = plainBlock.copyOf()
         addRoundKey(block, 0)
         for (round in 1 until NUM_ROUNDS) {
             subBytes(block)

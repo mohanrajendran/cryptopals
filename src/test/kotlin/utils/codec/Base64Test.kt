@@ -13,15 +13,15 @@ import io.kotest.property.checkAll
 @ExperimentalUnsignedTypes
 class Base64Test : FunSpec({
     val testCases = listOf(
-        Pair("TWFu", ubyteArrayOf(77u, 97u, 110u)),
-        Pair("TWE=", ubyteArrayOf(77u, 97u)),
-        Pair("TQ==", ubyteArrayOf(77u))
+        Pair(Base64("TWFu"), ubyteArrayOf(77u, 97u, 110u)),
+        Pair(Base64("TWE="), ubyteArrayOf(77u, 97u)),
+        Pair(Base64("TQ=="), ubyteArrayOf(77u))
     )
 
     context("Given test cases pass") {
         withData(testCases) { (base64, bytes) ->
             val uBytes = bytes.toUByteArray()
-            base64.fromBase64() shouldBe uBytes
+            base64.toBytes() shouldBe uBytes
             uBytes.toBase64() shouldBe base64
         }
     }
@@ -29,7 +29,7 @@ class Base64Test : FunSpec({
     context("Property test") {
         test("From bytes to base64 to bytes") {
             checkAll(Arb.uByteArray(Arb.int(1..20), Arb.uByte())) {
-                it.toBase64().fromBase64() shouldBe it
+                it.toBase64().toBytes() shouldBe it
             }
         }
     }

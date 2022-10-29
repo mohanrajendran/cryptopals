@@ -2,8 +2,11 @@
 
 package utils.codec
 
-fun String.fromHex(): UByteArray {
-    val hex = this
+@JvmInline
+value class Hex(val string: String)
+
+fun Hex.toBytes(): UByteArray {
+    val hex = this.string
     require(hex.length % 2 == 0) { "Input string must be of even length" }
 
     val result = UByteArray(hex.length / 2)
@@ -15,11 +18,11 @@ fun String.fromHex(): UByteArray {
     return result
 }
 
-fun UByteArray.toHex(): String {
+fun UByteArray.toHex(): Hex {
     val bytes = this
     val sb = StringBuilder()
     for (b in bytes) {
         sb.append(String.format("%02x", b.toByte()))
     }
-    return sb.toString()
+    return Hex(sb.toString())
 }
