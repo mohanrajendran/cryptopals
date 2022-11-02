@@ -10,6 +10,7 @@ value class Base64(val string: String)
 fun Base64.toBytes(): UByteArray {
     val base64 = this.string
     require(base64.length % 4 == 0) { "Input string must be of a length divisible by 4, got length ${base64.length}" }
+    require(base64.all { it in ("$base64Chars=") }) { "Input string contains invalid characters" }
 
     if (base64.length == 0)
         return ubyteArrayOf()

@@ -2,6 +2,7 @@ package psets
 
 import utils.byteops.*
 import utils.ciphers.AES128
+import utils.ciphers.repeatedBlocks
 import utils.codec.*
 import java.io.File
 
@@ -101,7 +102,7 @@ object Pset1 {
         println("challenge 8")
         File("resources/s1c8.in").useLines { lines ->
             val maxRepeated = lines
-                .maxByOrNull { repeatedBlocks(Hex(it).toBytes()) }
+                .maxByOrNull { Hex(it).toBytes().repeatedBlocks() }
             println("Answer:- ${maxRepeated!!}")
         }
     }
@@ -124,17 +125,5 @@ object Pset1 {
 
     private fun transpose(cipherText: UByteArray, offset: Int, period: Int): UByteArray {
         return cipherText.filterIndexed { index, _ -> index % period == offset }.toUByteArray()
-    }
-
-    private fun repeatedBlocks(cipherText: UByteArray): Int {
-        val counts = mutableMapOf<String, Int>()
-
-        cipherText.chunked(16)
-            .forEach { chunk ->
-                val key = chunk.toUByteArray().toHex().string
-                counts[key] = counts.getOrDefault(key, 0) + 1
-            }
-
-        return counts.values.filter { it > 1 }.sum()
     }
 }

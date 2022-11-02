@@ -16,7 +16,7 @@ class AES128 constructor(key: UByteArray) {
     private val expandedKey: UByteArray
 
     companion object {
-        private const val KEY_BYTES = 16
+        const val KEY_BYTES = 16
         private const val NUM_ROUNDS = 10
 
         // @formatter:off

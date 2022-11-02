@@ -14,7 +14,10 @@ class PaddingTest : FunSpec({
             15,
             Ascii("YELLOW SUBMARINE\u000e\u000e\u000e\u000e\u000e\u000e\u000e\u000e\u000e\u000e\u000e\u000e\u000e\u000e")
         ),
-        Pair(16, Ascii("YELLOW SUBMARINE")),
+        Pair(
+            16,
+            Ascii("YELLOW SUBMARINE\u0010\u0010\u0010\u0010\u0010\u0010\u0010\u0010\u0010\u0010\u0010\u0010\u0010\u0010\u0010\u0010")
+        ),
         Pair(17, Ascii("YELLOW SUBMARINE\u0001")),
         Pair(20, Ascii("YELLOW SUBMARINE\u0004\u0004\u0004\u0004")),
     )
